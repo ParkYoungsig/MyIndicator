@@ -75,9 +75,6 @@ def main() -> None:
         start=args.start,
         end=args.end,
     )
-    print("[ConfigSource]", result.config.get("_CONFIG_SOURCE"))
-    print("[ConfigFile]", result.config.get("_CONFIG_FILE"))
-    print("[ConfigHash]", result.config.get("_CONFIG_HASH"))
     print("[Backtester]", result.performance)
     print("[Benchmark]", result.benchmark_performance)
 

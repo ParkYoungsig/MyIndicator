@@ -8,9 +8,9 @@ TRADING_DAYS: 252
 FFILL: true
 
 JSON:
-  enabled: true
-  run_dir: backtester_20260130_134917
-
+  enabled: false
+  run_dir: 
+  
 STATIC:
   RATIO: 0.5
   # ETF(정적) 총비용 예시: 0.03% ~ 0.05%  => 0.0003 ~ 0.0005

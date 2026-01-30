@@ -7,21 +7,6 @@ from typing import Any, Dict, Optional, Tuple
 
 from infra.config import load_yaml_config, project_root
 
-import hashlib
-
-def _config_hash(cfg: Dict[str, Any]) -> str:
-    s = json.dumps(cfg, sort_keys=True, ensure_ascii=False)
-    return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
-def _attach_meta(cfg: Dict[str, Any], *, source: str, file: Path | None = None) -> Dict[str, Any]:
-    out = deepcopy(cfg)
-    out["_CONFIG_SOURCE"] = source
-    if file is not None:
-        out["_CONFIG_FILE"] = str(file)
-    out["_CONFIG_HASH"] = _config_hash(out)
-    return out
-
-
 
 DEFAULT_CONFIG: Dict[str, Any] = {
     "START_DATE": "2015-01-01",
@@ -233,10 +218,6 @@ def _load_json_configs_from_run_dir(
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     backtester_path = run_dir / "config_backtester.json"
     logic_path = run_dir / "config_logic.json"
-    if not backtester_path.exists():
-        backtester_path = run_dir / "configs" / "config_backtester.json"
-    if not logic_path.exists():
-        logic_path = run_dir / "configs" / "config_logic.json"
     backtester_cfg = _load_json_file(backtester_path)
     logic_cfg = _load_json_file(logic_path)
     return backtester_cfg, logic_cfg
@@ -250,7 +231,6 @@ def load_dual_engine_config(
 ) -> Dict[str, Any]:
     """Load config/{name}.yaml and merge onto DEFAULT_CONFIG."""
     user_cfg = load_yaml_config(name)
-    cfg_file = (project_root() / "config" / f"{name}.yaml").resolve()
 
     json_cfg = user_cfg.get("JSON") if isinstance(user_cfg.get("JSON"), dict) else {}
     json_enabled = bool(json_cfg.get("enabled", False))
@@ -271,11 +251,12 @@ def load_dual_engine_config(
                 )
             run_dir = _resolve_results_root(user_cfg) / str(json_run_name)
         # Prefer config_merged.json when available to reproduce the exact configuration used in that run.
-        merged_candidates = [run_dir / "config_merged.json", run_dir / "configs" / "config_merged.json"]
-        merged_path = next((p for p in merged_candidates if p.exists()), None)
-        if merged_path is not None:
+        merged_path = run_dir / "config_merged.json"
+        if merged_path.exists():
             merged_cfg = _load_json_file(merged_path)
-            return _attach_meta(merged_cfg, source="json-merged", file=merged_path)
+            # config_merged.json already contains the fully merged configuration (including embedded LOGIC dict).
+            # CLI start/end overrides will be applied later via apply_overrides().
+            user_cfg = merged_cfg
         else:
             backtester_cfg, logic_cfg = _load_json_configs_from_run_dir(run_dir)
             user_cfg = _apply_logic_override_dict(backtester_cfg, logic_cfg)
@@ -284,8 +265,7 @@ def load_dual_engine_config(
             user_cfg = _apply_logic_override(user_cfg, logic_name)
         else:
             user_cfg = _apply_logic_profile(user_cfg)
-    merged = _deep_merge(DEFAULT_CONFIG, user_cfg)
-    return _attach_meta(merged, source="yaml", file=cfg_file)
+    return _deep_merge(DEFAULT_CONFIG, user_cfg)
 
 
 def apply_overrides(
