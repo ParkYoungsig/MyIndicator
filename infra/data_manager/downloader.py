@@ -102,12 +102,12 @@ def get_krx_universe_codes(
     lists_cfg["refresh_master"] = bool(refresh_master)
     cfg["lists"] = lists_cfg
     sources_cfg = dict(cfg.get("sources", {}) or {})
-    sources_cfg["use_marcap"] = False
+    # sources_cfg["use_marcap"] = False
     sources_cfg["use_fdr_listing"] = True
     cfg["sources"] = sources_cfg
     downloader = UnifiedDownloader(cfg)
     downloader.refresh_master = bool(refresh_master)
-    downloader.use_marcap = False
+    # downloader.use_marcap = False
     downloader.use_fdr = True
     codes, _ = downloader._get_krx_list()
     return list(dict.fromkeys([str(c).zfill(6) for c in codes if str(c).strip()]))
@@ -208,39 +208,39 @@ def _normalize_fdr_df(
     return df[cols]
 
 
-def get_ohlcv(
-    code: str,
-    start: str | None = None,
-    end: str | None = None,
-    *,
-    preprocess: bool = True,
-    use_marcap: bool = True,
-    use_fdr: bool = True,
-    marcap_dir: str | None = None,
-) -> pd.DataFrame:
-    """종목 코드와 기간을 받아 OHLCV DataFrame을 반환합니다.
+# def get_ohlcv(
+#     code: str,
+#     start: str | None = None,
+#     end: str | None = None,
+#     *,
+#     preprocess: bool = True,
+#     use_marcap: bool = True,
+#     use_fdr: bool = True,
+#     marcap_dir: str | None = None,
+# ) -> pd.DataFrame:
+#     """종목 코드와 기간을 받아 OHLCV DataFrame을 반환합니다.
 
-    - 기본: Marcap 기반(가능 시) + FDR로 최신 구간 옵션 보완
-    - 반환 포맷: preprocess=True이면 date index + 소문자 컬럼(open/high/low/close/volume...)
-    """
+#     - 기본: Marcap 기반(가능 시) + FDR로 최신 구간 옵션 보완
+#     - 반환 포맷: preprocess=True이면 date index + 소문자 컬럼(open/high/low/close/volume...)
+#     """
 
-    # end 기본값은 호출 시점 기준 (문자열)
-    if end is None:
-        end = datetime.now().strftime("%Y-%m-%d")
+#     # end 기본값은 호출 시점 기준 (문자열)
+#     if end is None:
+#         end = datetime.now().strftime("%Y-%m-%d")
 
-    downloader = StockDownloader(
-        base_dir="data/raw",
-        start_date=start or "2005-01-03",
-        end_date=end,
-        preprocess=preprocess,
-        overwrite=False,
-        max_workers=1,
-        marcap_dir=marcap_dir,
-        use_marcap=use_marcap,
-        use_fdr=use_fdr,
-        preload_marcap=False,
-    )
-    return downloader.fetch_ohlcv(code, shares_map={})
+#     downloader = StockDownloader(
+#         base_dir="data/raw",
+#         start_date=start or "2005-01-03",
+#         end_date=end,
+#         preprocess=preprocess,
+#         overwrite=False,
+#         max_workers=1,
+#         marcap_dir=marcap_dir,
+#         use_marcap=use_marcap,
+#         use_fdr=use_fdr,
+#         preload_marcap=False,
+#     )
+#     return downloader.fetch_ohlcv(code, shares_map={})
 
 
 def _load_csv(symbol: str, start: str | None, end: str | None) -> pd.DataFrame:
@@ -326,7 +326,7 @@ class StockDownloader:
         overwrite: bool = False,
         max_workers: int = 8,
         marcap_dir: str | None = None,
-        use_marcap: bool = True,
+        # use_marcap: bool = True,
         use_fdr: bool = False,
         preload_marcap: bool = True,
     ):
@@ -345,7 +345,7 @@ class StockDownloader:
         self.overwrite = overwrite
 
         self.max_workers = int(max_workers)
-        self.use_marcap = bool(use_marcap)
+        # self.use_marcap = bool(use_marcap)
         self.use_fdr = bool(use_fdr)
         self.preload_marcap = bool(preload_marcap)
 
@@ -358,115 +358,115 @@ class StockDownloader:
         self._fdr = None
 
         os.makedirs(self.base_dir, exist_ok=True)
-        if self.use_marcap:
-            self._prepare_marcap()
+        # if self.use_marcap:
+        #     self._prepare_marcap()
 
-    def _marcap_parquet_path(self, year: int) -> Path:
-        return Path(self.marcap_dir) / "data" / f"marcap-{int(year)}.parquet"
+    # def _marcap_parquet_path(self, year: int) -> Path:
+    #     return Path(self.marcap_dir) / "data" / f"marcap-{int(year)}.parquet"
 
-    def get_master_from_marcap(self, *, year: int | None = None) -> pd.DataFrame:
-        """marcap parquet에서 Code-Name 매핑(마스터)을 생성합니다."""
+    # def get_master_from_marcap(self, *, year: int | None = None) -> pd.DataFrame:
+    #     """marcap parquet에서 Code-Name 매핑(마스터)을 생성합니다."""
 
-        if not self.use_marcap:
-            return pd.DataFrame()
+    #     if not self.use_marcap:
+    #         return pd.DataFrame()
 
-        target_year = (
-            int(year) if year is not None else int(min(self.end_ts.year, 2025))
-        )
-        p = self._marcap_parquet_path(target_year)
-        if not p.exists():
-            data_dir = Path(self.marcap_dir) / "data"
-            candidates = sorted(data_dir.glob("marcap-*.parquet"))
-            if not candidates:
-                return pd.DataFrame()
-            p = candidates[-1]
+    #     target_year = (
+    #         int(year) if year is not None else int(min(self.end_ts.year, 2025))
+    #     )
+    #     p = self._marcap_parquet_path(target_year)
+    #     if not p.exists():
+    #         data_dir = Path(self.marcap_dir) / "data"
+    #         candidates = sorted(data_dir.glob("marcap-*.parquet"))
+    #         if not candidates:
+    #             return pd.DataFrame()
+    #         p = candidates[-1]
 
-        cols = ["Code", "Name", "Market", "Stocks", "Date"]
-        df = pd.read_parquet(p, columns=cols)
-        if df.empty or "Code" not in df.columns:
-            return pd.DataFrame()
+    #     cols = ["Code", "Name", "Market", "Stocks", "Date"]
+    #     df = pd.read_parquet(p, columns=cols)
+    #     if df.empty or "Code" not in df.columns:
+    #         return pd.DataFrame()
 
-        df["Code"] = df["Code"].astype(str).str.strip().str.zfill(6)
-        df = df[df["Code"].str.match(r"^\d{6}$", na=False)]
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-            df = df.sort_values("Date")
+    #     df["Code"] = df["Code"].astype(str).str.strip().str.zfill(6)
+    #     df = df[df["Code"].str.match(r"^\d{6}$", na=False)]
+    #     if "Date" in df.columns:
+    #         df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    #         df = df.sort_values("Date")
 
-        # 마지막 값 기준으로 이름/시장/주식수 확보
-        keep_cols = [c for c in ("Code", "Name", "Market", "Stocks") if c in df.columns]
-        master = (
-            df.groupby("Code", as_index=False)[keep_cols].last()
-            if keep_cols
-            else df[["Code"]].drop_duplicates()
-        )
-        if "Stocks" in master.columns:
-            master["Stocks"] = pd.to_numeric(master["Stocks"], errors="coerce").fillna(
-                0
-            )
-        return master
+    #     # 마지막 값 기준으로 이름/시장/주식수 확보
+    #     keep_cols = [c for c in ("Code", "Name", "Market", "Stocks") if c in df.columns]
+    #     master = (
+    #         df.groupby("Code", as_index=False)[keep_cols].last()
+    #         if keep_cols
+    #         else df[["Code"]].drop_duplicates()
+    #     )
+    #     if "Stocks" in master.columns:
+    #         master["Stocks"] = pd.to_numeric(master["Stocks"], errors="coerce").fillna(
+    #             0
+    #         )
+    #     return master
 
-    def get_codes_and_shares_from_marcap(
-        self, *, year: int | None = None
-    ) -> tuple[list[str], dict[str, float]]:
-        """marcap_repo의 parquet에서 종목코드/상장주식수(Stocks)를 추출합니다."""
+    # def get_codes_and_shares_from_marcap(
+    #     self, *, year: int | None = None
+    # ) -> tuple[list[str], dict[str, float]]:
+    #     """marcap_repo의 parquet에서 종목코드/상장주식수(Stocks)를 추출합니다."""
 
-        if not self.use_marcap:
-            return [], {}
+    #     if not self.use_marcap:
+    #         return [], {}
 
-        master = self.get_master_from_marcap(year=year)
-        if master.empty:
-            return [], {}
+    #     master = self.get_master_from_marcap(year=year)
+    #     if master.empty:
+    #         return [], {}
 
-        codes = master["Code"].astype(str).str.zfill(6).tolist()
-        shares_map: dict[str, float] = {}
-        if "Stocks" in master.columns:
-            shares_map = {
-                str(code).zfill(6): float(stocks)
-                for code, stocks in zip(master["Code"], master["Stocks"])
-            }
-        return codes, shares_map
+    #     codes = master["Code"].astype(str).str.zfill(6).tolist()
+    #     shares_map: dict[str, float] = {}
+    #     if "Stocks" in master.columns:
+    #         shares_map = {
+    #             str(code).zfill(6): float(stocks)
+    #             for code, stocks in zip(master["Code"], master["Stocks"])
+    #         }
+    #     return codes, shares_map
 
-    def _prepare_marcap(self):
-        """Marcap 라이브러리가 없으면 Git Clone 후 경로 추가"""
-        # 이미 경로가 있으면 clone 생략
-        if not os.path.exists(self.marcap_dir):
-            git = shutil.which("git")
-            if not git:
-                raise RuntimeError(
-                    "marcap_repo가 없고 git도 없습니다. git 설치 후 재시도하거나 --use-marcap false로 실행하세요."
-                )
-            logger.info("Marcap 저장소 클론 중...")
-            # shell=False로 안전 실행
-            import subprocess
+    # def _prepare_marcap(self):
+    #     """Marcap 라이브러리가 없으면 Git Clone 후 경로 추가"""
+    #     # 이미 경로가 있으면 clone 생략
+    #     if not os.path.exists(self.marcap_dir):
+    #         git = shutil.which("git")
+    #         if not git:
+    #             raise RuntimeError(
+    #                 "marcap_repo가 없고 git도 없습니다. git 설치 후 재시도하거나 --use-marcap false로 실행하세요."
+    #             )
+    #         logger.info("Marcap 저장소 클론 중...")
+    #         # shell=False로 안전 실행
+    #         import subprocess
 
-            try:
-                subprocess.run(
-                    [
-                        git,
-                        "clone",
-                        "--depth",
-                        "1",
-                        "https://github.com/FinanceData/marcap.git",
-                        self.marcap_dir,
-                    ],
-                    check=True,
-                )
-            except Exception as e:
-                raise RuntimeError(f"Marcap clone 실패: {e}") from e
+    #         try:
+    #             subprocess.run(
+    #                 [
+    #                     git,
+    #                     "clone",
+    #                     "--depth",
+    #                     "1",
+    #                     "https://github.com/FinanceData/marcap.git",
+    #                     self.marcap_dir,
+    #                 ],
+    #                 check=True,
+    #             )
+    #         except Exception as e:
+    #             raise RuntimeError(f"Marcap clone 실패: {e}") from e
 
-        # 경로 주입
-        if self.marcap_dir not in sys.path:
-            sys.path.append(self.marcap_dir)
+    #     # 경로 주입
+    #     if self.marcap_dir not in sys.path:
+    #         sys.path.append(self.marcap_dir)
 
-    def _get_marcap_module(self):
-        import importlib
+    # def _get_marcap_module(self):
+    #     import importlib
 
-        try:
-            return importlib.import_module("marcap")
-        except Exception as exc:
-            raise ImportError(
-                "marcap 모듈을 불러올 수 없습니다. (clone 실패/경로 주입 실패/의존성 문제 가능)"
-            ) from exc
+    #     try:
+    #         return importlib.import_module("marcap")
+    #     except Exception as exc:
+    #         raise ImportError(
+    #             "marcap 모듈을 불러올 수 없습니다. (clone 실패/경로 주입 실패/의존성 문제 가능)"
+    #         ) from exc
 
     def _get_fdr_module(self):
         if self._fdr is not None:
@@ -480,155 +480,155 @@ class StockDownloader:
         self._fdr = fdr
         return fdr
 
-    def _marcap_for_code(
-        self,
-        code: str,
-        *,
-        start_ts: pd.Timestamp | None = None,
-        end_ts: pd.Timestamp | None = None,
-    ) -> pd.DataFrame:
-        """코드 단위로 Marcap 데이터를 가져옵니다.
+    # def _marcap_for_code(
+    #     self,
+    #     code: str,
+    #     *,
+    #     start_ts: pd.Timestamp | None = None,
+    #     end_ts: pd.Timestamp | None = None,
+    # ) -> pd.DataFrame:
+    #     """코드 단위로 Marcap 데이터를 가져옵니다.
 
-        1) marcap.marcap_data가 코드 필터 인자를 지원하면 코드 단위로 로드(메모리 안전)
-        2) 지원하지 않으면 연도별로 청크 로드 후 code만 필터링(폴백)
-        """
+    #     1) marcap.marcap_data가 코드 필터 인자를 지원하면 코드 단위로 로드(메모리 안전)
+    #     2) 지원하지 않으면 연도별로 청크 로드 후 code만 필터링(폴백)
+    #     """
 
-        if not self.use_marcap:
-            return pd.DataFrame()
+    #     if not self.use_marcap:
+    #         return pd.DataFrame()
 
-        code6 = str(code).zfill(6)
+    #     code6 = str(code).zfill(6)
 
-        eff_start = start_ts or self.start_ts
-        eff_end = end_ts or self.end_ts
+    #     eff_start = start_ts or self.start_ts
+    #     eff_end = end_ts or self.end_ts
 
-        start_year = int(pd.Timestamp(eff_start).year)
-        end_year = int(min(pd.Timestamp(eff_end).year, 2025))
-        chunks: list[pd.DataFrame] = []
+    #     start_year = int(pd.Timestamp(eff_start).year)
+    #     end_year = int(min(pd.Timestamp(eff_end).year, 2025))
+    #     chunks: list[pd.DataFrame] = []
 
-        for y in range(start_year, end_year + 1):
-            p = self._marcap_parquet_path(y)
-            if not p.exists():
-                continue
-            try:
-                df_y = pd.read_parquet(
-                    p,
-                    columns=[
-                        "Date",
-                        "Code",
-                        "Open",
-                        "High",
-                        "Low",
-                        "Close",
-                        "Volume",
-                        "Amount",
-                        "Marcap",
-                    ],
-                )
-            except Exception:
-                continue
-            if df_y.empty or "Code" not in df_y.columns:
-                continue
-            df_y["Code"] = df_y["Code"].astype(str).str.strip().str.zfill(6)
-            df_y = df_y[df_y["Code"] == code6]
-            if df_y.empty:
-                continue
-            chunks.append(df_y)
+    #     for y in range(start_year, end_year + 1):
+    #         p = self._marcap_parquet_path(y)
+    #         if not p.exists():
+    #             continue
+    #         try:
+    #             df_y = pd.read_parquet(
+    #                 p,
+    #                 columns=[
+    #                     "Date",
+    #                     "Code",
+    #                     "Open",
+    #                     "High",
+    #                     "Low",
+    #                     "Close",
+    #                     "Volume",
+    #                     "Amount",
+    #                     "Marcap",
+    #                 ],
+    #             )
+    #         except Exception:
+    #             continue
+    #         if df_y.empty or "Code" not in df_y.columns:
+    #             continue
+    #         df_y["Code"] = df_y["Code"].astype(str).str.strip().str.zfill(6)
+    #         df_y = df_y[df_y["Code"] == code6]
+    #         if df_y.empty:
+    #             continue
+    #         chunks.append(df_y)
 
-        if not chunks:
-            return pd.DataFrame()
+    #     if not chunks:
+    #         return pd.DataFrame()
 
-        df = pd.concat(chunks, ignore_index=True)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-            df = df[(df["Date"] >= eff_start) & (df["Date"] <= eff_end)]
-        return df
+    #     df = pd.concat(chunks, ignore_index=True)
+    #     if "Date" in df.columns:
+    #         df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    #         df = df[(df["Date"] >= eff_start) & (df["Date"] <= eff_end)]
+    #     return df
 
-    def _preload_marcap_groups(
-        self, target_codes: list[str]
-    ) -> dict[str, pd.DataFrame]:
-        """Marcap 데이터를 1회 로딩해 코드별 DataFrame dict로 구성.
+    # def _preload_marcap_groups(
+    #     self, target_codes: list[str]
+    # ) -> dict[str, pd.DataFrame]:
+    #     """Marcap 데이터를 1회 로딩해 코드별 DataFrame dict로 구성.
 
-        메모리 사용량이 커질 수 있으므로 preload_marcap=True일 때만 사용.
-        """
+    #     메모리 사용량이 커질 수 있으므로 preload_marcap=True일 때만 사용.
+    #     """
 
-        if not self.use_marcap:
-            return {}
+    #     if not self.use_marcap:
+    #         return {}
 
-        codes = {str(c).zfill(6) for c in target_codes}
+    #     codes = {str(c).zfill(6) for c in target_codes}
 
-        start_year = int(self.start_ts.year)
-        end_year = int(min(self.end_ts.year, 2025))
+    #     start_year = int(self.start_ts.year)
+    #     end_year = int(min(self.end_ts.year, 2025))
 
-        groups: dict[str, list[pd.DataFrame]] = {}
-        for y in range(start_year, end_year + 1):
-            p = self._marcap_parquet_path(y)
-            if not p.exists():
-                continue
-            try:
-                df_y = pd.read_parquet(
-                    p,
-                    columns=[
-                        "Date",
-                        "Code",
-                        "Open",
-                        "High",
-                        "Low",
-                        "Close",
-                        "Volume",
-                        "Amount",
-                        "Marcap",
-                    ],
-                )
-            except Exception:
-                continue
-            if df_y.empty or "Code" not in df_y.columns:
-                continue
+    #     groups: dict[str, list[pd.DataFrame]] = {}
+    #     for y in range(start_year, end_year + 1):
+    #         p = self._marcap_parquet_path(y)
+    #         if not p.exists():
+    #             continue
+    #         try:
+    #             df_y = pd.read_parquet(
+    #                 p,
+    #                 columns=[
+    #                     "Date",
+    #                     "Code",
+    #                     "Open",
+    #                     "High",
+    #                     "Low",
+    #                     "Close",
+    #                     "Volume",
+    #                     "Amount",
+    #                     "Marcap",
+    #                 ],
+    #             )
+    #         except Exception:
+    #             continue
+    #         if df_y.empty or "Code" not in df_y.columns:
+    #             continue
 
-            df_y["Code"] = df_y["Code"].astype(str).str.strip().str.zfill(6)
-            df_y = df_y[df_y["Code"].isin(codes)]
-            if df_y.empty:
-                continue
+    #         df_y["Code"] = df_y["Code"].astype(str).str.strip().str.zfill(6)
+    #         df_y = df_y[df_y["Code"].isin(codes)]
+    #         if df_y.empty:
+    #             continue
 
-            for code, df_code in df_y.groupby("Code"):
-                groups.setdefault(str(code), []).append(df_code)
+    #         for code, df_code in df_y.groupby("Code"):
+    #             groups.setdefault(str(code), []).append(df_code)
 
-        merged: dict[str, pd.DataFrame] = {}
-        for code, parts in groups.items():
-            merged[code] = pd.concat(parts, ignore_index=True)
+    #     merged: dict[str, pd.DataFrame] = {}
+    #     for code, parts in groups.items():
+    #         merged[code] = pd.concat(parts, ignore_index=True)
 
-        return merged
+    #     return merged
 
     def _get_target_list(self):
         """KRX 종목코드/상장주식수 확보 (기본: marcap, 옵션: FDR)."""
 
-        if self.use_marcap:
-            master = self.get_master_from_marcap()
-            if not master.empty and "Code" in master.columns:
-                codes = master["Code"].astype(str).str.zfill(6).tolist()
-                shares_map: dict[str, float] = {}
-                if "Stocks" in master.columns:
-                    shares_map = {
-                        str(code).zfill(6): float(stocks)
-                        for code, stocks in zip(master["Code"], master["Stocks"])
-                    }
+        # if self.use_marcap:
+        #     master = self.get_master_from_marcap()
+        #     if not master.empty and "Code" in master.columns:
+        #         codes = master["Code"].astype(str).str.zfill(6).tolist()
+        #         shares_map: dict[str, float] = {}
+        #         if "Stocks" in master.columns:
+        #             shares_map = {
+        #                 str(code).zfill(6): float(stocks)
+        #                 for code, stocks in zip(master["Code"], master["Stocks"])
+        #             }
 
-                # 코드-이름 매핑 저장(StockDownloader 단독 실행 시에도 남기기)
-                try:
-                    list_path = os.path.join(
-                        self.base_dir,
-                        f"krx_master_{datetime.now().strftime('%Y%m%d')}.csv",
-                    )
-                    cols = [
-                        c
-                        for c in ("Code", "Name", "Market", "Stocks")
-                        if c in master.columns
-                    ]
-                    master[cols].to_csv(list_path, index=False, encoding="utf-8-sig")
-                except Exception:
-                    pass
+        #         # 코드-이름 매핑 저장(StockDownloader 단독 실행 시에도 남기기)
+        #         try:
+        #             list_path = os.path.join(
+        #                 self.base_dir,
+        #                 f"krx_master_{datetime.now().strftime('%Y%m%d')}.csv",
+        #             )
+        #             cols = [
+        #                 c
+        #                 for c in ("Code", "Name", "Market", "Stocks")
+        #                 if c in master.columns
+        #             ]
+        #             master[cols].to_csv(list_path, index=False, encoding="utf-8-sig")
+        #         except Exception:
+        #             pass
 
-                logger.info(f"KRX 종목코드 확보 완료 (marcap, {len(codes)}개)")
-                return codes, shares_map
+        #         logger.info(f"KRX 종목코드 확보 완료 (marcap, {len(codes)}개)")
+        #         return codes, shares_map
 
         if self.use_fdr:
             fdr = self._get_fdr_module()
@@ -810,10 +810,10 @@ class StockDownloader:
         workers = max(1, int(self.max_workers))
 
         marcap_groups: dict[str, pd.DataFrame] | None = None
-        if self.use_marcap and self.preload_marcap:
-            logger.info("Marcap 데이터 사전 로딩 시작(메모리 사용량 증가 가능)")
-            marcap_groups = self._preload_marcap_groups(target_codes)
-            logger.info("Marcap 데이터 사전 로딩 완료")
+        # if self.use_marcap and self.preload_marcap:
+        #     logger.info("Marcap 데이터 사전 로딩 시작(메모리 사용량 증가 가능)")
+        #     marcap_groups = self._preload_marcap_groups(target_codes)
+        #     logger.info("Marcap 데이터 사전 로딩 완료")
 
         # 네트워크 요청(FDR) 병렬화: 너무 크게 잡으면 차단/레이트리밋 위험
         with ThreadPoolExecutor(max_workers=workers) as ex:
@@ -851,10 +851,9 @@ class UnifiedDownloader:
         self.output_mode = str(self.data_cfg.get("output_mode", "raw")).lower()
         self.preprocess = bool(self.data_cfg.get("preprocess", True))
 
-        # list_only: 다운로드/저장 없이(로컬 parquet 기준) 마스터 CSV만 갱신
         self.refresh_master = bool(self.lists_cfg.get("refresh_master", True))
 
-        self.use_marcap = bool(self.sources_cfg.get("use_marcap", True))
+        # self.use_marcap = bool(self.sources_cfg.get("use_marcap", True))
         self.use_fdr = bool(self.sources_cfg.get("use_fdr", True))
         self.preload_marcap = bool(self.sources_cfg.get("preload_marcap", True))
 
@@ -864,9 +863,10 @@ class UnifiedDownloader:
         return kind in ("kr_stocks", "kr_etf")
 
     def _filter_kr_codes(self, codes: Iterable[str]) -> list[str]:
-        items = [str(c).strip() for c in codes if str(c).strip()]
-        s = pd.Series([c.zfill(6) for c in items])
-        valid = s.str.match(r"^\d{6}$", na=False)
+        # items = [str(c).strip() for c in codes if str(c).strip()]
+        items = [t for c in codes if (t := str(c).strip())]
+        s = pd.Series([c.zfill(6) for c in items]) # 6 자리 맞추기, '0'으로 채움
+        valid = s.str.match(r"^\d{6}$", na=False) # 숫자 6자리안지 확인
         return list(dict.fromkeys(s[valid].tolist()))
 
     def _filter_df_by_codes(
@@ -968,32 +968,32 @@ class UnifiedDownloader:
 
         allow = set(local_codes)
 
-        # 1) marcap master 우선 (Code/Name/Market/Stocks)
-        if self.use_marcap:
-            try:
-                downloader = StockDownloader(
-                    base_dir=self._resolve_dir("kr_stocks", processed=False),
-                    start_date=self.start_date,
-                    end_date=self.end_date,
-                    preprocess=False,
-                    overwrite=False,
-                    max_workers=1,
-                    use_marcap=True,
-                    use_fdr=False,
-                    preload_marcap=False,
-                )
-                master = downloader.get_master_from_marcap()
-                if master is not None and not master.empty and "Code" in master.columns:
-                    master = self._filter_df_by_codes(
-                        master, "Code", local_codes, pad_kr=True
-                    )
-                    self._save_krx_master(master)
-                    logger.info(
-                        f"KR 주식 마스터 갱신 완료(로컬 기준, marcap): {len(master)}개"
-                    )
-                    return
-            except Exception as exc:
-                logger.warning(f"marcap 기반 마스터 갱신 실패: {exc}")
+        # # 1) marcap master 우선 (Code/Name/Market/Stocks)
+        # if self.use_marcap:
+        #     try:
+        #         downloader = StockDownloader(
+        #             base_dir=self._resolve_dir("kr_stocks", processed=False),
+        #             start_date=self.start_date,
+        #             end_date=self.end_date,
+        #             preprocess=False,
+        #             overwrite=False,
+        #             max_workers=1,
+        #             use_marcap=True,
+        #             use_fdr=False,
+        #             preload_marcap=False,
+        #         )
+        #         master = downloader.get_master_from_marcap()
+        #         if master is not None and not master.empty and "Code" in master.columns:
+        #             master = self._filter_df_by_codes(
+        #                 master, "Code", local_codes, pad_kr=True
+        #             )
+        #             self._save_krx_master(master)
+        #             logger.info(
+        #                 f"KR 주식 마스터 갱신 완료(로컬 기준, marcap): {len(master)}개"
+        #             )
+        #             return
+        #     except Exception as exc:
+        #         logger.warning(f"marcap 기반 마스터 갱신 실패: {exc}")
 
         # 2) FDR listing 폴백 (Code/Name 정도)
         if self.use_fdr:
@@ -1263,31 +1263,31 @@ class UnifiedDownloader:
                 shares = self._filter_shares_map(shares, filtered_codes)
                 return filtered_codes, shares
 
-        # 기본 경로: marcap(로컬 parquet)로 종목코드 확보 (네트워크 불필요)
-        if self.use_marcap:
-            try:
-                downloader = StockDownloader(
-                    base_dir=self._resolve_dir("kr_stocks", processed=False),
-                    start_date=self.start_date,
-                    end_date=self.end_date,
-                    preprocess=False,
-                    overwrite=False,
-                    max_workers=1,
-                    use_marcap=True,
-                    use_fdr=False,
-                    preload_marcap=False,
-                )
-                master = downloader.get_master_from_marcap()
-                if self.refresh_master:
-                    self._save_krx_master(master)
-                codes, shares_map = downloader.get_codes_and_shares_from_marcap()
-                if codes:
-                    codes = self._filter_kr_codes(codes)
-                    shares_map = self._filter_shares_map(shares_map, codes)
-                    logger.info(f"KRX 종목코드 확보 완료 (marcap, {len(codes)}개)")
-                    return codes, shares_map
-            except Exception as exc:
-                logger.warning(f"marcap에서 종목코드 확보 실패: {exc}")
+        # # 기본 경로: marcap(로컬 parquet)로 종목코드 확보 (네트워크 불필요)
+        # if self.use_marcap:
+        #     try:
+        #         downloader = StockDownloader(
+        #             base_dir=self._resolve_dir("kr_stocks", processed=False),
+        #             start_date=self.start_date,
+        #             end_date=self.end_date,
+        #             preprocess=False,
+        #             overwrite=False,
+        #             max_workers=1,
+        #             use_marcap=True,
+        #             use_fdr=False,
+        #             preload_marcap=False,
+        #         )
+        #         master = downloader.get_master_from_marcap()
+        #         if self.refresh_master:
+        #             self._save_krx_master(master)
+        #         codes, shares_map = downloader.get_codes_and_shares_from_marcap()
+        #         if codes:
+        #             codes = self._filter_kr_codes(codes)
+        #             shares_map = self._filter_shares_map(shares_map, codes)
+        #             logger.info(f"KRX 종목코드 확보 완료 (marcap, {len(codes)}개)")
+        #             return codes, shares_map
+        #     except Exception as exc:
+        #         logger.warning(f"marcap에서 종목코드 확보 실패: {exc}")
 
         # 옵션: FDR listing (원하면 config에 sources.use_fdr_listing: true)
         allow_fdr_listing = bool(self.sources_cfg.get("use_fdr_listing", False))
@@ -1432,19 +1432,19 @@ class UnifiedDownloader:
             logger.error(f"ETF 목록 확보 실패 (FDR {market}): {exc}")
             return [], {}
 
-    def _fetch_kr(self, code: str, shares_map: Dict[str, float]) -> pd.DataFrame:
-        downloader = StockDownloader(
-            base_dir=self._resolve_dir("kr_stocks", processed=False),
-            start_date=self.start_date,
-            end_date=self.end_date,
-            preprocess=False,
-            overwrite=False,
-            max_workers=1,
-            use_marcap=self.use_marcap,
-            use_fdr=self.use_fdr,
-            preload_marcap=self.preload_marcap,
-        )
-        return downloader.fetch_ohlcv(code, shares_map=shares_map)
+    # def _fetch_kr(self, code: str, shares_map: Dict[str, float]) -> pd.DataFrame:
+    #     downloader = StockDownloader(
+    #         base_dir=self._resolve_dir("kr_stocks", processed=False),
+    #         start_date=self.start_date,
+    #         end_date=self.end_date,
+    #         preprocess=False,
+    #         overwrite=False,
+    #         max_workers=1,
+    #         use_marcap=self.use_marcap,
+    #         use_fdr=self.use_fdr,
+    #         preload_marcap=self.preload_marcap,
+    #     )
+    #     return downloader.fetch_ohlcv(code, shares_map=shares_map)
 
     def _fetch_us(self, code: str, _: Dict[str, float]) -> pd.DataFrame:
         fdr = self._get_fdr()
@@ -1485,18 +1485,18 @@ class UnifiedDownloader:
                     preprocess=False,
                     overwrite=False,
                     max_workers=1,
-                    use_marcap=self.use_marcap,
+                    # use_marcap=self.use_marcap,
                     use_fdr=self.use_fdr,
                     preload_marcap=self.preload_marcap,
                 )
 
-                marcap_groups: dict[str, pd.DataFrame] | None = None
-                if self.use_marcap and self.preload_marcap:
-                    logger.info("Marcap 데이터 사전 로딩 시작(메모리 사용량 증가 가능)")
-                    marcap_groups = kr_downloader._preload_marcap_groups(
-                        [str(c).zfill(6) for c in codes_to_run]
-                    )
-                    logger.info("Marcap 데이터 사전 로딩 완료")
+                # marcap_groups: dict[str, pd.DataFrame] | None = None
+                # if self.use_marcap and self.preload_marcap:
+                #     logger.info("Marcap 데이터 사전 로딩 시작(메모리 사용량 증가 가능)")
+                #     marcap_groups = kr_downloader._preload_marcap_groups(
+                #         [str(c).zfill(6) for c in codes_to_run]
+                #     )
+                #     logger.info("Marcap 데이터 사전 로딩 완료")
 
                 def _fetch_kr_shared(
                     code: str, shares_map: Dict[str, float]

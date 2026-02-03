@@ -42,7 +42,7 @@ lists:
   refresh_master: true     # 마스터/리스트 CSV 갱신 여부
 
 sources:
-  use_marcap: true
+  # use_marcap: false # true
   use_fdr: true
-  use_fdr_listing: false
-  preload_marcap: true
+  use_fdr_listing: true # false
+  preload_marcap: false # true

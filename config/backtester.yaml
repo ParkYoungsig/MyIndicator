@@ -9,7 +9,7 @@ FFILL: true
 
 JSON:
   enabled: true
-  run_dir: backtester_20260130_134917
+  run_dir: backtester_20260203_094207
 
 STATIC:
   RATIO: 0.5
@@ -116,6 +116,11 @@ BENCHMARK_TICKER: "069500"
 
 DATA:
   root: ../data
+# 박영식 : 아래는 프로그램에 있는 로직을 보고 추가함 
+  universe:
+    mode: csv        # 또는 auto
+    stock_csv: data/raw/krx_master_latest.csv
+    etf_csv: data/raw/kr_etf_master_latest.csv
 
 RESULTS:
   root: ../results
