@@ -689,7 +689,7 @@ class StockDownloader:
         code: str,
         *,
         shares_map: Dict[str, float] | None = None,
-        marcap_groups: dict[str, pd.DataFrame] | None = None,
+        # marcap_groups: dict[str, pd.DataFrame] | None = None,
         start_ts: pd.Timestamp | None = None,
         end_ts: pd.Timestamp | None = None,
     ) -> pd.DataFrame:
@@ -699,31 +699,33 @@ class StockDownloader:
         eff_start = start_ts or self.start_ts
         eff_end = end_ts or self.end_ts
 
-        # (A) Marcap 데이터(가능하면 코드 단위로 로드)
-        if marcap_groups is not None:
-            df_m = marcap_groups.get(str(code).zfill(6), pd.DataFrame())
-        else:
-            df_m = self._marcap_for_code(code, start_ts=eff_start, end_ts=eff_end)
+        # # (A) Marcap 데이터(가능하면 코드 단위로 로드)
+        # if marcap_groups is not None:
+        #     df_m = marcap_groups.get(str(code).zfill(6), pd.DataFrame())
+        # else:
+        #     df_m = self._marcap_for_code(code, start_ts=eff_start, end_ts=eff_end)
 
         # (B) FDR 데이터: Marcap 마지막 날짜 + 1일부터 end_date까지 자동 연결
+        df_m = pd.DataFrame()
         df_f = pd.DataFrame()
         if self.use_fdr:
             fdr = self._get_fdr_module()
 
             fdr_start = eff_start
-            if not df_m.empty:
-                if "Date" in df_m.columns:
-                    last_m = pd.to_datetime(df_m["Date"], errors="coerce").max()
-                else:
-                    last_m = pd.to_datetime(df_m.index, errors="coerce").max()
-                if pd.notna(last_m):
-                    fdr_start = pd.Timestamp(last_m) + pd.Timedelta(days=1)
+            # if not df_m.empty:
+            #     if "Date" in df_m.columns:
+            #         last_m = pd.to_datetime(df_m["Date"], errors="coerce").max()
+            #     else:
+            #         last_m = pd.to_datetime(df_m.index, errors="coerce").max()
+            #     if pd.notna(last_m):
+            #         fdr_start = pd.Timestamp(last_m) + pd.Timedelta(days=1)
 
             try:
                 df_f = fdr.DataReader(code, fdr_start, eff_end)
             except Exception as exc:
                 # FDR은 네트워크/소스 이슈가 잦으므로, marcap 데이터만이라도 저장되게 폴백
-                logger.debug(f"FDR 보강 실패({code}): {exc}")
+                # logger.debug(f"FDR 보강 실패({code}): {exc}")
+                logger.debug(f"FDR 다운로드 실패({code}): {exc}")
                 df_f = pd.DataFrame()
 
         if not df_f.empty:
@@ -761,23 +763,25 @@ class StockDownloader:
             "Amount",
             "Marcap",
         ]
-        if not df_m.empty:
-            for c in cols:
-                if c not in df_m.columns:
-                    df_m[c] = pd.NA
+        # if not df_m.empty:
+        #     for c in cols:
+        #         if c not in df_m.columns:
+        #             df_m[c] = pd.NA
 
-            if not df_f.empty:
-                last_m_date = pd.to_datetime(df_m["Date"], errors="coerce").max()
-                if pd.notna(last_m_date):
-                    df_f = df_f[
-                        pd.to_datetime(df_f["Date"], errors="coerce") > last_m_date
-                    ]
-                df_final = pd.concat([df_m[cols], df_f], ignore_index=True)
-            else:
-                df_final = df_m[cols]
-        else:
-            df_final = df_f
+        #     if not df_f.empty:
+        #         last_m_date = pd.to_datetime(df_m["Date"], errors="coerce").max()
+        #         if pd.notna(last_m_date):
+        #             df_f = df_f[
+        #                 pd.to_datetime(df_f["Date"], errors="coerce") > last_m_date
+        #             ]
+        #         df_final = pd.concat([df_m[cols], df_f], ignore_index=True)
+        #     else:
+        #         df_final = df_m[cols]
+        # else:
+        #    df_final = df_f
 
+        df_final = df_f
+        
         if df_final.empty:
             return pd.DataFrame()
 
@@ -1507,14 +1511,14 @@ class UnifiedDownloader:
                         return kr_downloader.fetch_ohlcv(
                             code6,
                             shares_map=shares_map,
-                            marcap_groups=marcap_groups,
+                            # marcap_groups=marcap_groups,
                             start_ts=pd.to_datetime(start_override),
                             end_ts=pd.to_datetime(self.end_date),
                         )
                     return kr_downloader.fetch_ohlcv(
                         code,
                         shares_map=shares_map,
-                        marcap_groups=marcap_groups,
+                        # marcap_groups=marcap_groups,
                     )
 
                 self._download_codes(
